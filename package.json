@@ -1,0 +1,16 @@
+{
+  "name": "link-scraper",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r dev",
+    "start": "pnpm --filter @link-scraper/api start & pnpm --filter @link-scraper/worker start & pnpm --filter @link-scraper/frontend start",
+    "db:up": "docker-compose up -d postgres redis",
+    "db:migrate": "pnpm --filter @link-scraper/api migrate",
+    "db:generate": "pnpm --filter @link-scraper/api generate",
+    "db:init": "pnpm --filter @link-scraper/api seed"
+  }
+}
