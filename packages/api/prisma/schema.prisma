@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  pages     Page[]
+
+  @@map("users")
+}
+
+model Page {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  url        String
+  finalUrl   String?   @map("final_url")
+  title      String?
+  status     String    @default("queued") // queued, processing, done, failed
+  linkCount  Int       @default(0) @map("link_count")
+  queuedAt   DateTime  @default(now()) @map("queued_at")
+  startedAt  DateTime? @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+  error      String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  links      Link[]
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("pages")
+}
+
+model Link {
+  id        Int      @id @default(autoincrement())
+  pageId    Int      @map("page_id")
+  href      String
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  page      Page     @relation(fields: [pageId], references: [id])
+
+  @@index([pageId])
+  @@unique([pageId, href])
+  @@map("links")
+}
