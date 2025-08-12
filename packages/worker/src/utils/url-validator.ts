@@ -1,64 +1,70 @@
 /**
- * Validates a URL to prevent SSRF attacks and ensure it's a valid HTTP/HTTPS URL
+ * Validates a URL to prevent SSRF attacks
+ * In development mode, localhost is allowed
  */
-export function validateUrl(url: string): boolean {
+export const validateUrl = (url: string): boolean => {
   try {
     const parsedUrl = new URL(url);
-    
-    // Only allow HTTP and HTTPS protocols
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      return false;
-    }
-    
-    // Prevent localhost access in production
-    if (process.env.NODE_ENV === 'production') {
-      const hostname = parsedUrl.hostname.toLowerCase();
-      if (
-        hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        hostname === '::1' ||
-        hostname.endsWith('.local')
-      ) {
-        return false;
-      }
-    }
-    
-    // Prevent private IP ranges in production
-    if (process.env.NODE_ENV === 'production') {
+
+    // Only block private IP ranges and localhost in production
+    if (process.env.NODE_ENV === "production") {
       const hostname = parsedUrl.hostname;
-      // Simple check for private IP ranges
       if (
-        hostname.startsWith('10.') ||
-        hostname.startsWith('172.16.') ||
-        hostname.startsWith('192.168.')
+        hostname === "localhost" ||
+        hostname.match(/^127\.\d+\.\d+\.\d+$/) ||
+        hostname.match(/^10\.\d+\.\d+\.\d+$/) ||
+        hostname.match(/^172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+$/) ||
+        hostname.match(/^192\.168\.\d+\.\d+$/)
       ) {
         return false;
       }
     }
-    
-    return true;
-  } catch (error) {
+
+    // Only allow http/https protocols
+    return ["http:", "https:"].includes(parsedUrl.protocol);
+  } catch {
     return false;
   }
-}
+};
 
 /**
- * Normalizes a URL by removing fragments and normalizing the path
+ * Normalizes a URL to prevent duplicates
  */
-export function normalizeUrl(url: string): string {
+export const normalizeUrl = (url: string): string => {
   try {
-    const parsedUrl = new URL(url);
-    
-    // Remove fragments
-    parsedUrl.hash = '';
-    
-    // Normalize path
-    if (parsedUrl.pathname === '') {
-      parsedUrl.pathname = '/';
+    const parsed = new URL(url);
+
+    // Convert to lowercase
+    let normalized =
+      parsed.protocol.toLowerCase() + "//" + parsed.host.toLowerCase();
+
+    // Handle trailing slashes consistently
+    if (parsed.pathname === "/") {
+      normalized += "/";
+    } else {
+      normalized += parsed.pathname.replace(/\/+$/, "");
     }
-    
-    return parsedUrl.toString();
-  } catch (error) {
-    return url;
+
+    // Sort query parameters
+    if (parsed.search) {
+      const params = new URLSearchParams(parsed.search);
+      // Convert to array, sort, and rebuild
+      const paramPairs: [string, string][] = [];
+      params.forEach((value, key) => {
+        paramPairs.push([key, value]);
+      });
+      paramPairs.sort((a, b) => a[0].localeCompare(b[0]));
+
+      const sortedParams = new URLSearchParams();
+      paramPairs.forEach(([key, value]) => {
+        sortedParams.append(key, value);
+      });
+
+      normalized += "?" + sortedParams.toString();
+    }
+
+    return normalized;
+  } catch {
+    return url; // Return original if parsing fails
   }
-}
+};
