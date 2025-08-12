@@ -5,6 +5,7 @@ import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
 import pageRoutes from "./routes/pages";
+import { errorHandler, logger } from "./middleware/error";
 
 // Load environment variables
 dotenv.config();
@@ -23,7 +24,11 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined'));
+app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined', {
+  stream: {
+    write: (message) => logger.info(message.trim())
+  }
+}));
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -39,32 +44,20 @@ app.get("/health", (_req: Request, res: Response) => {
 });
 
 // Error handling
-interface ErrorWithStatus extends Error {
-  status?: number;
-}
-
-app.use(
-  (err: ErrorWithStatus, _req: Request, res: Response, _next: NextFunction) => {
-    console.error(err.stack);
-    res.status(err.status || 500).json({
-      message: "An unexpected error occurred",
-      error: NODE_ENV === "development" ? err.message : undefined,
-    });
-  }
-);
+app.use(errorHandler);
 
 async function startServer(): Promise<void> {
   try {
     await prisma.$connect();
-    console.log("Connected to database");
+    logger.info("Connected to database");
 
     app.listen(PORT, () => {
-      console.log(`Server running in ${NODE_ENV} mode`);
-      console.log(`API available at http://${HOST}:${PORT}`);
-      console.log(`CORS configured for origin: ${CORS_ORIGIN}`);
+      logger.info(`Server running in ${NODE_ENV} mode`);
+      logger.info(`API available at http://${HOST}:${PORT}`);
+      logger.info(`CORS configured for origin: ${CORS_ORIGIN}`);
     });
   } catch (error) {
-    console.error("Failed to start server:", error);
+    logger.error("Failed to start server:", error);
     process.exit(1);
   }
 }
@@ -74,7 +67,7 @@ startServer();
 // Graceful shutdown
 process.on("SIGINT", async () => {
   await prisma.$disconnect();
-  console.log("Disconnected from database");
+  logger.info("Disconnected from database");
   process.exit(0);
 });
 
