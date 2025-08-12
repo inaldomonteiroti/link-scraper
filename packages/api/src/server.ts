@@ -5,69 +5,72 @@ import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
 import pageRoutes from "./routes/pages";
-import { errorHandler, logger } from "./middleware/error";
 
-// Load environment variables
 dotenv.config();
 
 const prisma = new PrismaClient();
 
 const app: express.Express = express();
 const PORT = process.env.PORT || 3001;
-const HOST = process.env.HOST || 'localhost';
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const HOST = process.env.HOST || "localhost";
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:3000";
+const NODE_ENV = process.env.NODE_ENV || "development";
 
-// Configure middleware
-app.use(cors({
-  origin: CORS_ORIGIN,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: CORS_ORIGIN,
+    credentials: true,
+  })
+);
 app.use(express.json());
-app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined', {
-  stream: {
-    write: (message) => logger.info(message.trim())
-  }
-}));
+app.use(morgan(NODE_ENV === "development" ? "dev" : "combined"));
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/pages", pageRoutes);
 
-// Health check endpoint
 app.get("/health", (_req: Request, res: Response) => {
-  res.status(200).json({ 
+  res.status(200).json({
     status: "ok",
     environment: NODE_ENV,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
-// Error handling
-app.use(errorHandler);
+interface ErrorWithStatus extends Error {
+  status?: number;
+}
+
+app.use(
+  (err: ErrorWithStatus, _req: Request, res: Response, _next: NextFunction) => {
+    console.error(err.stack);
+    res.status(err.status || 500).json({
+      message: "An unexpected error occurred",
+      error: NODE_ENV === "development" ? err.message : undefined,
+    });
+  }
+);
 
 async function startServer(): Promise<void> {
   try {
     await prisma.$connect();
-    logger.info("Connected to database");
+    console.log("Connected to database");
 
     app.listen(PORT, () => {
-      logger.info(`Server running in ${NODE_ENV} mode`);
-      logger.info(`API available at http://${HOST}:${PORT}`);
-      logger.info(`CORS configured for origin: ${CORS_ORIGIN}`);
+      console.log(`Server running in ${NODE_ENV} mode`);
+      console.log(`API available at http://${HOST}:${PORT}`);
+      console.log(`CORS configured for origin: ${CORS_ORIGIN}`);
     });
   } catch (error) {
-    logger.error("Failed to start server:", error);
+    console.error("Failed to start server:", error);
     process.exit(1);
   }
 }
 
 startServer();
 
-// Graceful shutdown
 process.on("SIGINT", async () => {
   await prisma.$disconnect();
-  logger.info("Disconnected from database");
+  console.log("Disconnected from database");
   process.exit(0);
 });
 

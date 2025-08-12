@@ -26,13 +26,22 @@ const USER_AGENT = process.env.USER_AGENT || "Mozilla/5.0 (compatible; LinkScrap
 
 type ScrapedLink = { href: string; name: string | null };
 
+// Custom error class for scraping errors
+class ScrapeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ScrapeError";
+  }
+}
+
 async function scrapeUrl(url: string): Promise<ScrapeResult> {
   try {
     // Validate URL to prevent SSRF attacks
     if (!validateUrl(url)) {
-      throw new Error("Invalid or potentially unsafe URL");
+      throw new ScrapeError("Invalid or potentially unsafe URL");
     }
 
+    console.log(`Fetching URL: ${url}`);
     const response: AxiosResponse<string> = await axios.get(url, {
       timeout: REQUEST_TIMEOUT,
       maxContentLength: MAX_CONTENT_SIZE,
@@ -48,14 +57,16 @@ async function scrapeUrl(url: string): Promise<ScrapeResult> {
     // Validate content type
     const contentType = response.headers["content-type"] || "";
     if (!contentType.includes("text/html")) {
-      throw new Error(`Not an HTML page. Content-Type: ${contentType}`);
+      throw new ScrapeError(`Not an HTML page. Content-Type: ${contentType}`);
     }
 
     // Get final URL after redirects
     const finalUrl = response.request.res.responseUrl || url;
+    console.log(`Final URL after redirects: ${finalUrl}`);
 
     const $ = cheerio.load(response.data);
     const title = $("title").text().trim() || finalUrl;
+    console.log(`Page title: ${title}`);
 
     const links: ScrapedLink[] = [];
     $("a").each((_i, el) => {
@@ -76,17 +87,23 @@ async function scrapeUrl(url: string): Promise<ScrapeResult> {
         if (name.length > 255) name = name.slice(0, 252) + "...";
 
         links.push({ href, name });
-      } catch {
+      } catch (err) {
         // Skip invalid URLs
+        console.warn(`Skipping invalid URL: ${rawHref}`, err);
         return;
       }
     });
 
+    console.log(`Found ${links.length} links on the page`);
     return { title, links, finalUrl };
   } catch (err) {
+    if (err instanceof ScrapeError) {
+      throw err;
+    }
+    
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`Error scraping ${url}:`, msg);
-    throw err;
+    throw new ScrapeError(`Failed to scrape URL: ${msg}`);
   }
 }
 
@@ -176,9 +193,20 @@ scrapeQueue.on("failed", (job, error) => {
 
 console.log(`Worker started with concurrency ${CONCURRENCY}. Waiting for jobs...`);
 
+// Handle graceful shutdown
 process.on("SIGINT", async () => {
+  console.log("Shutting down worker...");
   await scrapeQueue.close();
   await prisma.$disconnect();
   console.log("Worker shut down gracefully");
   process.exit(0);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled rejection at:", promise, "reason:", reason);
 });

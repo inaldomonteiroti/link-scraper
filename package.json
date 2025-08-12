@@ -1,16 +1,37 @@
 {
   "name": "link-scraper",
+  "version": "1.0.0",
+  "description": "A web application for scraping links from web pages",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
-    "build": "pnpm -r build",
-    "dev": "pnpm -r dev",
-    "start": "pnpm --filter @link-scraper/api start & pnpm --filter @link-scraper/worker start & pnpm --filter @link-scraper/frontend start",
+    "start": "pnpm -r run start",
+    "dev": "pnpm -r run dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
     "db:up": "docker-compose up -d postgres redis",
-    "db:migrate": "pnpm --filter @link-scraper/api migrate",
-    "db:generate": "pnpm --filter @link-scraper/api generate",
-    "db:init": "pnpm --filter @link-scraper/api seed"
-  }
+    "db:down": "docker-compose down",
+    "db:init": "pnpm --filter @link-scraper/api run seed",
+    "db:migrate": "pnpm --filter @link-scraper/api run migrate",
+    "db:generate": "pnpm --filter @link-scraper/api run generate"
+  },
+  "keywords": [
+    "scraper",
+    "links",
+    "web",
+    "nodejs",
+    "react",
+    "typescript",
+    "monorepo",
+    "pnpm"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.1.6"
+  },
+  "engines": {
+    "node": ">=14",
+    "pnpm": ">=7"
+  },
+  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
 }

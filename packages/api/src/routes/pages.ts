@@ -133,7 +133,7 @@ router.get(
         where: { userId },
       });
 
-      const pages = await prisma.page.findMany({
+      const pages = (await prisma.page.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
         skip,
@@ -141,7 +141,6 @@ router.get(
         select: {
           id: true,
           url: true,
-          finalUrl: true,
           title: true,
           status: true,
           linkCount: true,
@@ -151,7 +150,19 @@ router.get(
           error: true,
           createdAt: true,
         },
-      });
+      })) as unknown as Array<{
+        id: number;
+        url: string;
+        finalUrl?: string | null;
+        title: string | null;
+        status: string;
+        linkCount: number;
+        queuedAt: Date;
+        startedAt: Date | null;
+        finishedAt: Date | null;
+        error: string | null;
+        createdAt: Date;
+      }>;
 
       const pagination: Pagination = {
         total: totalCount,
@@ -214,7 +225,7 @@ router.get(
       const limit = Number(req.query.limit) || 20;
       const skip = (page - 1) * limit;
 
-      const pageData = await prisma.page.findFirst({
+      const pageData = (await prisma.page.findFirst({
         where: {
           id: Number(id),
           userId,
@@ -222,7 +233,6 @@ router.get(
         select: {
           id: true,
           url: true,
-          finalUrl: true,
           title: true,
           status: true,
           linkCount: true,
@@ -232,7 +242,19 @@ router.get(
           error: true,
           createdAt: true,
         },
-      });
+      })) as unknown as {
+        id: number;
+        url: string;
+        finalUrl?: string | null;
+        title: string | null;
+        status: string;
+        linkCount: number;
+        queuedAt: Date;
+        startedAt: Date | null;
+        finishedAt: Date | null;
+        error: string | null;
+        createdAt: Date;
+      } | null;
 
       if (!pageData) {
         return res.status(404).json({ message: "Page not found" });
