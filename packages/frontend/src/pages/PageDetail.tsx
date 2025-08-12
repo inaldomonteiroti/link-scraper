@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import {
-  Container,
-  Table,
-  Alert,
-  Spinner,
-  Badge,
-  Button,
-  Row,
-  Col,
-} from "react-bootstrap";
 import { pagesAPI } from "../services/api";
-import { Link as LinkType, Page } from "../types";
+import { Page, Link as LinkType, PageDetailsResponse } from "../types";
 import Pagination from "../components/Pagination";
 
 const PageDetail: React.FC = () => {
@@ -19,184 +9,253 @@ const PageDetail: React.FC = () => {
   const [page, setPage] = useState<Page | null>(null);
   const [links, setLinks] = useState<LinkType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
-  const fetchPageDetails = async (pageNum = 1) => {
+  const fetchPageDetails = async (pageNum: number = 1) => {
     if (!id) return;
 
     try {
       setLoading(true);
-      const response = await pagesAPI.getPageDetails(Number(id), pageNum);
-      setPage(response.data.page);
-      setLinks(response.data.links);
-      setTotalPages(response.data.pagination.pages);
-      setCurrentPage(pageNum);
+      const response = await pagesAPI.getPageDetails(parseInt(id), pageNum);
+      const data = response.data as PageDetailsResponse;
+
+      setPage(data.page);
+      setLinks(data.links);
+      setTotalPages(data.pagination.pages);
+      setCurrentPage(data.pagination.page);
+      setError(null);
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to fetch page details");
+      console.error("Error fetching page details:", err);
+      setError("Failed to load page details. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchPageDetails();
-  }, [id]);
-
   const handlePageChange = (pageNum: number) => {
+    setCurrentPage(pageNum);
     fetchPageDetails(pageNum);
   };
 
-  const getStatusBadge = (status: string) => {
+  useEffect(() => {
+    if (page && (page.status === "queued" || page.status === "processing")) {
+      const interval = setInterval(() => {
+        fetchPageDetails(currentPage);
+      }, 5000);
+
+      setRefreshInterval(interval);
+
+      return () => {
+        if (refreshInterval) clearInterval(refreshInterval);
+      };
+    } else if (refreshInterval) {
+      clearInterval(refreshInterval);
+      setRefreshInterval(null);
+    }
+  }, [page]);
+
+  useEffect(() => {
+    fetchPageDetails();
+
+    return () => {
+      if (refreshInterval) clearInterval(refreshInterval);
+    };
+  }, [id]);
+
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "queued":
-        return <Badge bg="secondary">Queued</Badge>;
+        return "bg-secondary";
       case "processing":
-        return <Badge bg="warning" text="dark">Processing</Badge>;
+        return "bg-warning text-dark";
       case "done":
-        return <Badge bg="success">Done</Badge>;
+        return "bg-success";
       case "failed":
-        return <Badge bg="danger">Failed</Badge>;
+        return "bg-danger";
       default:
-        return <Badge bg="secondary">{status}</Badge>;
+        return "bg-secondary";
     }
   };
 
-  if (loading) {
-    return (
-      <Container className="py-5 text-center">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container className="py-5">
-        <Alert variant="danger">{error}</Alert>
-        <Button as={Link} to="/dashboard" variant="primary">
-          Back to Dashboard
-        </Button>
-      </Container>
-    );
-  }
-
-  if (!page) {
-    return (
-      <Container className="py-5">
-        <Alert variant="warning">Page not found</Alert>
-        <Button as={Link} to="/dashboard" variant="primary">
-          Back to Dashboard
-        </Button>
-      </Container>
-    );
-  }
-
   return (
-    <Container className="py-4">
-      <Button as={Link} to="/dashboard" variant="outline-primary" className="mb-4">
-        &larr; Back to Dashboard
-      </Button>
+    <div className="container mt-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>Page Details</h1>
+        <Link to="/dashboard" className="btn btn-outline-primary">
+          Back to Dashboard
+        </Link>
+      </div>
 
-      <h1 className="mb-3">{page.title || "No Title"}</h1>
-
-      <Row className="mb-4">
-        <Col md={6}>
-          <div className="card h-100">
-            <div className="card-body">
-              <h5 className="card-title">Page Information</h5>
-              <Table borderless>
-                <tbody>
-                  <tr>
-                    <th style={{ width: "120px" }}>URL:</th>
-                    <td>
-                      <a
-                        href={page.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {page.url}
-                      </a>
-                    </td>
-                  </tr>
-                  {page.finalUrl && page.finalUrl !== page.url && (
-                    <tr>
-                      <th>Final URL:</th>
-                      <td>
-                        <a
-                          href={page.finalUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {page.finalUrl}
-                        </a>
-                      </td>
-                    </tr>
-                  )}
-                  <tr>
-                    <th>Status:</th>
-                    <td>{getStatusBadge(page.status)}</td>
-                  </tr>
-                  <tr>
-                    <th>Links Found:</th>
-                    <td>{page.linkCount}</td>
-                  </tr>
-                  <tr>
-                    <th>Scraped On:</th>
-                    <td>
-                      {page.finishedAt
-                        ? new Date(page.finishedAt).toLocaleString()
-                        : "Not completed"}
-                    </td>
-                  </tr>
-                </tbody>
-              </Table>
-            </div>
+      {loading && !page ? (
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
-        </Col>
-      </Row>
-
-      <h2 className="mb-3">Links ({page.linkCount})</h2>
-
-      {links.length === 0 ? (
-        <Alert variant="info">No links found on this page.</Alert>
-      ) : (
+          <p className="mt-2">Loading page details...</p>
+        </div>
+      ) : error && !page ? (
+        <div className="alert alert-danger">{error}</div>
+      ) : page ? (
         <>
-          <Table striped bordered hover responsive className="link-table">
-            <thead>
-              <tr>
-                <th style={{ width: "60%" }}>URL</th>
-                <th style={{ width: "40%" }}>Link Text</th>
-              </tr>
-            </thead>
-            <tbody>
-              {links.map((link) => (
-                <tr key={link.id}>
-                  <td>
+          <div className="card mb-4">
+            <div className="card-header bg-primary text-white">
+              <h5 className="mb-0">Page Information</h5>
+            </div>
+            <div className="card-body">
+              <div className="row">
+                <div className="col-md-8">
+                  <h4>{page.title || "No title"}</h4>
+                  <p>
+                    <strong>Original URL:</strong>{" "}
                     <a
-                      href={link.href}
+                      href={page.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="text-break"
                     >
-                      {link.href}
+                      {page.url}
                     </a>
-                  </td>
-                  <td className="link-name">{link.name || "(No text)"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
+                  </p>
+
+                  {page.finalUrl && page.finalUrl !== page.url && (
+                    <p>
+                      <strong>Final URL:</strong>{" "}
+                      <a
+                        href={page.finalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-break"
+                      >
+                        {page.finalUrl}
+                      </a>
+                      <span className="ms-2 badge bg-info">Redirected</span>
+                    </p>
+                  )}
+                </div>
+                <div className="col-md-4">
+                  <div className="d-flex flex-column align-items-end">
+                    <span
+                      className={`badge ${getStatusBadgeClass(
+                        page.status
+                      )} mb-2`}
+                    >
+                      {page.status}
+                    </span>
+                    <p className="mb-1">
+                      <strong>Links found:</strong> {page.linkCount}
+                    </p>
+                    <p className="mb-1">
+                      <strong>Submitted:</strong>{" "}
+                      {new Date(page.queuedAt).toLocaleString()}
+                    </p>
+                    {page.finishedAt && (
+                      <p className="mb-0">
+                        <strong>Completed:</strong>{" "}
+                        {new Date(page.finishedAt).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {page.error && (
+                <div className="alert alert-danger mt-3">
+                  <strong>Error:</strong> {page.error}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+              <h5 className="mb-0">Links Found ({page.linkCount})</h5>
+              <button
+                className="btn btn-sm btn-light"
+                onClick={() => fetchPageDetails(currentPage)}
+                disabled={loading}
+              >
+                <i className="bi bi-arrow-clockwise"></i> Refresh
+              </button>
+            </div>
+            <div className="card-body">
+              {page.status === "queued" || page.status === "processing" ? (
+                <div className="alert alert-warning">
+                  <div className="d-flex align-items-center">
+                    <div
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                    >
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <span>
+                      This page is currently being processed. Links will appear
+                      here once scraping is complete.
+                    </span>
+                  </div>
+                </div>
+              ) : loading ? (
+                <div className="text-center py-4">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p className="mt-2">Loading links...</p>
+                </div>
+              ) : links.length === 0 ? (
+                <div className="alert alert-info">
+                  No links were found on this page.
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Link URL</th>
+                        <th>Link Text</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {links.map((link, index) => {
+                        const startIndex = (currentPage - 1) * 20; // Assuming 20 per page
+                        return (
+                          <tr key={link.id}>
+                            <td>{startIndex + index + 1}</td>
+                            <td>
+                              <a
+                                href={link.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-break"
+                              >
+                                {link.href}
+                              </a>
+                            </td>
+                            <td>{link.name || "No text"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          </div>
         </>
+      ) : (
+        <div className="alert alert-danger">Page not found</div>
       )}
-    </Container>
+    </div>
   );
 };
 

@@ -1,184 +1,224 @@
-import React, { useState, useEffect } from "react";
-import { Container, Table, Button, Form, Alert, Badge, Spinner } from "react-bootstrap";
-import { Link } from "react-router-dom";
-import { pagesAPI } from "../services/api";
-import { Page } from "../types";
-import Pagination from "../components/Pagination";
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { pagesAPI } from '../services/api';
+import { Page, PagesResponse } from '../types';
+import Pagination from '../components/Pagination';
 
 const Dashboard: React.FC = () => {
   const [pages, setPages] = useState<Page[]>([]);
-  const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [url, setUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
-  const fetchPages = async (page = 1) => {
+  const fetchPages = async (page: number = 1) => {
     try {
       setLoading(true);
       const response = await pagesAPI.getPages(page);
-      setPages(response.data.pages);
-      setTotalPages(response.data.pagination.pages);
-      setCurrentPage(page);
+      const data = response.data as PagesResponse;
+      setPages(data.pages);
+      setTotalPages(data.pagination.pages);
+      setCurrentPage(data.pagination.page);
+      setError(null);
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to fetch pages");
+      console.error('Error fetching pages:', err);
+      setError('Failed to load pages. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchPages();
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-    setSubmitting(true);
-
+    
+    if (!url.trim()) {
+      setError('Please enter a URL');
+      return;
+    }
+    
     try {
+      setSubmitting(true);
+      setError(null);
       await pagesAPI.submitUrl(url);
-      setSuccess("URL submitted successfully! It will be processed shortly.");
-      setUrl("");
-      fetchPages(1); // Refresh the list
+      setUrl('');
+      fetchPages(1);
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to submit URL");
+      console.error('Error submitting URL:', err);
+      setError(err.response?.data?.message || 'Failed to submit URL. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handlePageChange = (page: number) => {
+    setCurrentPage(page);
     fetchPages(page);
   };
 
-  const getStatusBadge = (status: string) => {
+  useEffect(() => {
+    const hasProcessingPages = pages.some(
+      page => page.status === 'queued' || page.status === 'processing'
+    );
+    
+    if (hasProcessingPages) {
+      const interval = setInterval(() => {
+        fetchPages(currentPage);
+      }, 5000);
+      
+      setRefreshInterval(interval);
+      
+      return () => {
+        if (refreshInterval) clearInterval(refreshInterval);
+      };
+    } else if (refreshInterval) {
+      clearInterval(refreshInterval);
+      setRefreshInterval(null);
+    }
+  }, [pages]);
+
+  useEffect(() => {
+    fetchPages();
+    
+    return () => {
+      if (refreshInterval) clearInterval(refreshInterval);
+    };
+  }, []);
+
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case "queued":
-        return <Badge bg="secondary">Queued</Badge>;
-      case "processing":
-        return <Badge bg="warning" text="dark">Processing</Badge>;
-      case "done":
-        return <Badge bg="success">Done</Badge>;
-      case "failed":
-        return <Badge bg="danger">Failed</Badge>;
+      case 'queued':
+        return 'bg-secondary';
+      case 'processing':
+        return 'bg-warning text-dark';
+      case 'done':
+        return 'bg-success';
+      case 'failed':
+        return 'bg-danger';
       default:
-        return <Badge bg="secondary">{status}</Badge>;
+        return 'bg-secondary';
     }
   };
 
   return (
-    <Container className="py-4">
+    <div className="container mt-4">
       <h1 className="mb-4">Dashboard</h1>
-
+      
       <div className="card mb-4">
+        <div className="card-header bg-primary text-white">
+          <h5 className="mb-0">Submit a URL for Scraping</h5>
+        </div>
         <div className="card-body">
-          <h5 className="card-title">Submit a URL to Scrape</h5>
-          {error && <Alert variant="danger">{error}</Alert>}
-          {success && <Alert variant="success">{success}</Alert>}
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="url">
-              <Form.Label>URL</Form.Label>
-              <Form.Control
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleSubmit}>
+            <div className="input-group">
+              <input
                 type="url"
-                placeholder="https://example.com"
+                className="form-control"
+                placeholder="Enter a URL (e.g., https://example.com)"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 required
               />
-              <Form.Text className="text-muted">
-                Enter a valid URL with http:// or https:// protocol
-              </Form.Text>
-            </Form.Group>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={submitting}
-            >
-              {submitting ? (
-                <>
-                  <Spinner
-                    as="span"
-                    animation="border"
-                    size="sm"
-                    role="status"
-                    aria-hidden="true"
-                    className="me-2"
-                  />
-                  Submitting...
-                </>
-              ) : (
-                "Submit URL"
-              )}
-            </Button>
-          </Form>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={submitting}
+              >
+                {submitting ? 'Submitting...' : 'Submit'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-
-      <h2 className="mb-3">Your Pages</h2>
-      {loading ? (
-        <div className="text-center my-5">
-          <Spinner animation="border" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </Spinner>
+      
+      <div className="card">
+        <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Your Scraped Pages</h5>
+          <button
+            className="btn btn-sm btn-light"
+            onClick={() => fetchPages(currentPage)}
+            disabled={loading}
+          >
+            <i className="bi bi-arrow-clockwise"></i> Refresh
+          </button>
         </div>
-      ) : pages.length === 0 ? (
-        <Alert variant="info">
-          You haven't submitted any URLs yet. Use the form above to get started.
-        </Alert>
-      ) : (
-        <>
-          <Table striped bordered hover responsive>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>URL</th>
-                <th>Status</th>
-                <th>Links</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pages.map((page) => (
-                <tr key={page.id}>
-                  <td>{page.title || "No title"}</td>
-                  <td className="text-truncate" style={{ maxWidth: "200px" }}>
-                    <a href={page.url} target="_blank" rel="noopener noreferrer">
-                      {page.url}
-                    </a>
-                  </td>
-                  <td>{getStatusBadge(page.status)}</td>
-                  <td>{page.linkCount}</td>
-                  <td>
-                    {new Date(page.createdAt).toLocaleDateString()}
-                  </td>
-                  <td>
-                    <Button
-                      as={Link}
-                      to={`/pages/${page.id}`}
-                      variant="outline-primary"
-                      size="sm"
-                      disabled={page.status !== "done"}
-                    >
-                      View Links
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+        <div className="card-body">
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-2">Loading pages...</p>
+            </div>
+          ) : pages.length === 0 ? (
+            <div className="alert alert-info">
+              You haven't submitted any URLs yet. Use the form above to get started.
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>URL</th>
+                    <th>Status</th>
+                    <th>Links</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pages.map((page) => (
+                    <tr key={page.id}>
+                      <td>{page.title || 'No title'}</td>
+                      <td>
+                        <a
+                          href={page.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-truncate d-inline-block"
+                          style={{ maxWidth: '200px' }}
+                        >
+                          {page.url}
+                        </a>
+                      </td>
+                      <td>
+                        <span className={`badge ${getStatusBadgeClass(page.status)}`}>
+                          {page.status}
+                        </span>
+                      </td>
+                      <td>{page.linkCount}</td>
+                      <td>{new Date(page.createdAt).toLocaleString()}</td>
+                      <td>
+                        <Link
+                          to={`/pages/${page.id}`}
+                          className="btn btn-sm btn-primary"
+                        >
+                          View Links
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
           />
-        </>
-      )}
-    </Container>
+        </div>
+      </div>
+    </div>
   );
 };
 

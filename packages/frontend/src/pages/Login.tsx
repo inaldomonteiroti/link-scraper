@@ -1,82 +1,91 @@
-import React, { useState } from "react";
-import { Container, Form, Button, Alert, Card } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setIsSubmitting(true);
-
+    setError(null);
+    setIsLoading(true);
+    
     try {
       await login(email, password);
-      navigate("/dashboard");
+      navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to login");
+      setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <Container className="py-5">
+    <div className="container mt-5">
       <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-5">
-          <Card className="shadow">
-            <Card.Body className="p-4">
-              <h2 className="text-center mb-4">Login</h2>
-              {error && <Alert variant="danger">{error}</Alert>}
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3" controlId="email">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-header bg-primary text-white">
+              <h4 className="mb-0">Login</h4>
+            </div>
+            <div className="card-body">
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              )}
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label htmlFor="email" className="form-label">
+                    Email
+                  </label>
+                  <input
                     type="email"
+                    className="form-control"
+                    id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="Enter your email"
                   />
-                </Form.Group>
-
-                <Form.Group className="mb-3" controlId="password">
-                  <Form.Label>Password</Form.Label>
-                  <Form.Control
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="password" className="form-label">
+                    Password
+                  </label>
+                  <input
                     type="password"
+                    className="form-control"
+                    id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="Enter your password"
                   />
-                </Form.Group>
-
-                <Button
-                  variant="primary"
+                </div>
+                <button
                   type="submit"
-                  className="w-100 mt-3"
-                  disabled={isSubmitting}
+                  className="btn btn-primary w-100"
+                  disabled={isLoading}
                 >
-                  {isSubmitting ? "Logging in..." : "Login"}
-                </Button>
-              </Form>
-              <div className="text-center mt-3">
+                  {isLoading ? 'Logging in...' : 'Login'}
+                </button>
+              </form>
+              <div className="mt-3 text-center">
                 <p>
-                  Don't have an account?{" "}
+                  Don't have an account?{' '}
                   <Link to="/register">Register here</Link>
                 </p>
               </div>
-            </Card.Body>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
-    </Container>
+    </div>
   );
 };
 

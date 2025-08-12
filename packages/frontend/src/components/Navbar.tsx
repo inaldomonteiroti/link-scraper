@@ -1,10 +1,9 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Navbar as BsNavbar, Container, Nav, Button } from "react-bootstrap";
 import { useAuth } from "../contexts/AuthContext";
 
 const Navbar: React.FC = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -13,42 +12,67 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <BsNavbar bg="dark" variant="dark" expand="lg" className="mb-4">
-      <Container>
-        <BsNavbar.Brand as={Link} to="/">
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div className="container">
+        <Link className="navbar-brand" to="/">
           Link Scraper
-        </BsNavbar.Brand>
-        <BsNavbar.Toggle aria-controls="basic-navbar-nav" />
-        <BsNavbar.Collapse id="basic-navbar-nav">
-          <Nav className="me-auto">
-            <Nav.Link as={Link} to="/">
-              Home
-            </Nav.Link>
+        </Link>
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span className="navbar-toggler-icon"></span>
+        </button>
+        <div className="collapse navbar-collapse" id="navbarNav">
+          <ul className="navbar-nav me-auto">
             {isAuthenticated && (
-              <Nav.Link as={Link} to="/dashboard">
-                Dashboard
-              </Nav.Link>
-            )}
-          </Nav>
-          <Nav>
-            {isAuthenticated ? (
-              <Button variant="outline-light" onClick={handleLogout}>
-                Logout
-              </Button>
-            ) : (
               <>
-                <Nav.Link as={Link} to="/login">
-                  Login
-                </Nav.Link>
-                <Nav.Link as={Link} to="/register">
-                  Register
-                </Nav.Link>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/dashboard">
+                    Dashboard
+                  </Link>
+                </li>
               </>
             )}
-          </Nav>
-        </BsNavbar.Collapse>
-      </Container>
-    </BsNavbar>
+          </ul>
+          <ul className="navbar-nav">
+            {isAuthenticated ? (
+              <>
+                <li className="nav-item">
+                  <span className="nav-link">Welcome, {user?.username}</span>
+                </li>
+                <li className="nav-item">
+                  <button
+                    className="btn btn-link nav-link"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/login">
+                    Login
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/register">
+                    Register
+                  </Link>
+                </li>
+              </>
+            )}
+          </ul>
+        </div>
+      </div>
+    </nav>
   );
 };
 

@@ -1,5 +1,4 @@
 import React from "react";
-import { Pagination as BsPagination } from "react-bootstrap";
 
 interface PaginationProps {
   currentPage: number;
@@ -14,88 +13,97 @@ const Pagination: React.FC<PaginationProps> = ({
 }) => {
   if (totalPages <= 1) return null;
 
-  const getPageItems = () => {
-    const items = [];
-    const maxVisiblePages = 5;
-    const halfVisiblePages = Math.floor(maxVisiblePages / 2);
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
 
-    let startPage = Math.max(1, currentPage - halfVisiblePages);
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = startPage + maxPagesToShow - 1;
 
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
 
-    // Previous button
-    items.push(
-      <BsPagination.Prev
-        key="prev"
-        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-        disabled={currentPage === 1}
-      />
-    );
-
-    // First page
-    if (startPage > 1) {
-      items.push(
-        <BsPagination.Item
-          key={1}
-          active={1 === currentPage}
-          onClick={() => onPageChange(1)}
-        >
-          1
-        </BsPagination.Item>
-      );
-      if (startPage > 2) {
-        items.push(<BsPagination.Ellipsis key="ellipsis-1" />);
-      }
-    }
-
-    // Page numbers
     for (let i = startPage; i <= endPage; i++) {
-      items.push(
-        <BsPagination.Item
-          key={i}
-          active={i === currentPage}
-          onClick={() => onPageChange(i)}
-        >
-          {i}
-        </BsPagination.Item>
-      );
+      pageNumbers.push(i);
     }
 
-    // Last page
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        items.push(<BsPagination.Ellipsis key="ellipsis-2" />);
-      }
-      items.push(
-        <BsPagination.Item
-          key={totalPages}
-          active={totalPages === currentPage}
-          onClick={() => onPageChange(totalPages)}
-        >
-          {totalPages}
-        </BsPagination.Item>
-      );
-    }
-
-    // Next button
-    items.push(
-      <BsPagination.Next
-        key="next"
-        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-        disabled={currentPage === totalPages}
-      />
-    );
-
-    return items;
+    return pageNumbers;
   };
 
   return (
-    <BsPagination className="justify-content-center mt-4">
-      {getPageItems()}
-    </BsPagination>
+    <nav aria-label="Page navigation">
+      <ul className="pagination justify-content-center">
+        <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+          <button
+            className="page-link"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+        </li>
+
+        {getPageNumbers()[0] > 1 && (
+          <>
+            <li className="page-item">
+              <button className="page-link" onClick={() => onPageChange(1)}>
+                1
+              </button>
+            </li>
+            {getPageNumbers()[0] > 2 && (
+              <li className="page-item disabled">
+                <span className="page-link">...</span>
+              </li>
+            )}
+          </>
+        )}
+
+        {getPageNumbers().map((number) => (
+          <li
+            key={number}
+            className={`page-item ${currentPage === number ? "active" : ""}`}
+          >
+            <button className="page-link" onClick={() => onPageChange(number)}>
+              {number}
+            </button>
+          </li>
+        ))}
+
+        {getPageNumbers()[getPageNumbers().length - 1] < totalPages && (
+          <>
+            {getPageNumbers()[getPageNumbers().length - 1] < totalPages - 1 && (
+              <li className="page-item disabled">
+                <span className="page-link">...</span>
+              </li>
+            )}
+            <li className="page-item">
+              <button
+                className="page-link"
+                onClick={() => onPageChange(totalPages)}
+              >
+                {totalPages}
+              </button>
+            </li>
+          </>
+        )}
+
+        <li
+          className={`page-item ${
+            currentPage === totalPages ? "disabled" : ""
+          }`}
+        >
+          <button
+            className="page-link"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
+        </li>
+      </ul>
+    </nav>
   );
 };
 

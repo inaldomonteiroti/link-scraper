@@ -1,59 +1,63 @@
-import React from "react";
-import { Container, Button, Row, Col } from "react-bootstrap";
-import { Link } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Home: React.FC = () => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <Container className="py-5">
-      <Row className="justify-content-center text-center">
-        <Col md={8}>
-          <h1 className="display-4 mb-4">Link Scraper</h1>
+    <div className="container mt-5">
+      <div className="row">
+        <div className="col-md-8 offset-md-2 text-center">
+          <h1 className="display-4 mb-4">Welcome to Link Scraper</h1>
           <p className="lead mb-4">
-            Extract and analyze links from any web page. Submit a URL and get a
-            comprehensive list of all links on that page.
+            A simple application that allows you to scrape links from any web page.
+            Submit a URL, and we'll extract all the links for you.
           </p>
-          {isAuthenticated ? (
-            <Button as={Link} to="/dashboard" variant="primary" size="lg">
-              Go to Dashboard
-            </Button>
-          ) : (
-            <div>
-              <Button as={Link} to="/login" variant="primary" size="lg" className="me-3">
-                Login
-              </Button>
-              <Button as={Link} to="/register" variant="outline-primary" size="lg">
-                Register
-              </Button>
+          
+          <div className="card mb-4">
+            <div className="card-body">
+              <h5 className="card-title">Features</h5>
+              <ul className="list-group list-group-flush text-start">
+                <li className="list-group-item">
+                  <i className="bi bi-check-circle-fill text-success me-2"></i>
+                  Submit any URL and get all links from that page
+                </li>
+                <li className="list-group-item">
+                  <i className="bi bi-check-circle-fill text-success me-2"></i>
+                  View a list of all pages you've scraped
+                </li>
+                <li className="list-group-item">
+                  <i className="bi bi-check-circle-fill text-success me-2"></i>
+                  See detailed information about each link
+                </li>
+                <li className="list-group-item">
+                  <i className="bi bi-check-circle-fill text-success me-2"></i>
+                  Track the status of your scraping jobs in real-time
+                </li>
+              </ul>
             </div>
-          )}
-        </Col>
-      </Row>
-      <Row className="mt-5 pt-5">
-        <Col md={4} className="mb-4">
-          <h3>Easy to Use</h3>
-          <p>
-            Simply enter a URL and our system will extract all links from the
-            page. No complex setup required.
-          </p>
-        </Col>
-        <Col md={4} className="mb-4">
-          <h3>Comprehensive Results</h3>
-          <p>
-            Get detailed information about each link, including the URL and link
-            text.
-          </p>
-        </Col>
-        <Col md={4} className="mb-4">
-          <h3>Secure & Private</h3>
-          <p>
-            Your scraped data is stored securely and is only accessible to you.
-          </p>
-        </Col>
-      </Row>
-    </Container>
+          </div>
+          
+          <div className="d-grid gap-2 d-md-block">
+            {isAuthenticated ? (
+              <Link to="/dashboard" className="btn btn-primary btn-lg px-4 me-md-2">
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="btn btn-primary btn-lg px-4 me-md-2">
+                  Login
+                </Link>
+                <Link to="/register" className="btn btn-outline-primary btn-lg px-4">
+                  Register
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

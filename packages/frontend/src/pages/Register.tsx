@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Container, Form, Button, Alert, Card } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -8,104 +7,127 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError(null);
 
     if (password !== confirmPassword) {
-      return setError("Passwords do not match");
+      setError("Passwords do not match");
+      return;
     }
 
-    setIsSubmitting(true);
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       await register(username, email, password);
       navigate("/dashboard");
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to register");
+      setError(
+        err.response?.data?.message || "Failed to register. Please try again."
+      );
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <Container className="py-5">
+    <div className="container mt-5">
       <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-5">
-          <Card className="shadow">
-            <Card.Body className="p-4">
-              <h2 className="text-center mb-4">Register</h2>
-              {error && <Alert variant="danger">{error}</Alert>}
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3" controlId="username">
-                  <Form.Label>Username</Form.Label>
-                  <Form.Control
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-header bg-primary text-white">
+              <h4 className="mb-0">Register</h4>
+            </div>
+            <div className="card-body">
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              )}
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label htmlFor="username" className="form-label">
+                    Username
+                  </label>
+                  <input
                     type="text"
+                    className="form-control"
+                    id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
-                    placeholder="Choose a username"
+                    minLength={3}
                   />
-                </Form.Group>
-
-                <Form.Group className="mb-3" controlId="email">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="email" className="form-label">
+                    Email
+                  </label>
+                  <input
                     type="email"
+                    className="form-control"
+                    id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="Enter your email"
                   />
-                </Form.Group>
-
-                <Form.Group className="mb-3" controlId="password">
-                  <Form.Label>Password</Form.Label>
-                  <Form.Control
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="password" className="form-label">
+                    Password
+                  </label>
+                  <input
                     type="password"
+                    className="form-control"
+                    id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="Create a password"
                     minLength={6}
                   />
-                </Form.Group>
-
-                <Form.Group className="mb-3" controlId="confirmPassword">
-                  <Form.Label>Confirm Password</Form.Label>
-                  <Form.Control
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="confirmPassword" className="form-label">
+                    Confirm Password
+                  </label>
+                  <input
                     type="password"
+                    className="form-control"
+                    id="confirmPassword"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    placeholder="Confirm your password"
                   />
-                </Form.Group>
-
-                <Button
-                  variant="primary"
+                </div>
+                <button
                   type="submit"
-                  className="w-100 mt-3"
-                  disabled={isSubmitting}
+                  className="btn btn-primary w-100"
+                  disabled={isLoading}
                 >
-                  {isSubmitting ? "Registering..." : "Register"}
-                </Button>
-              </Form>
-              <div className="text-center mt-3">
+                  {isLoading ? "Registering..." : "Register"}
+                </button>
+              </form>
+              <div className="mt-3 text-center">
                 <p>
                   Already have an account? <Link to="/login">Login here</Link>
                 </p>
               </div>
-            </Card.Body>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
-    </Container>
+    </div>
   );
 };
 

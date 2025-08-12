@@ -6,10 +6,9 @@ import {
   PageDetailsResponse,
 } from "../types";
 
-// Get environment variables with fallbacks
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
 const API_TIMEOUT = parseInt(process.env.REACT_APP_API_TIMEOUT || "30000", 10);
-const TOKEN_KEY = "token"; // Use the same key as AuthContext
+const TOKEN_KEY = process.env.REACT_APP_TOKEN_KEY || "link_scraper_token";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -17,11 +16,9 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Add authentication token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) {
-    console.log("Adding token to request:", token.substring(0, 10) + "...");
     const h = config.headers as AxiosHeaders | undefined;
     if (h && typeof h.set === "function") {
       h.set("Authorization", `Bearer ${token}`);
@@ -37,13 +34,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Log errors in development mode
-    if (process.env.NODE_ENV === 'development') {
-      console.error('API Error:', error.response?.data || error.message);
+    if (process.env.NODE_ENV === "development") {
+      console.error("API Error:", error.response?.data || error.message);
     }
     return Promise.reject(error);
   }
@@ -62,10 +57,9 @@ export const authAPI = {
       email,
       password,
     }),
-    
+
   logout: () => {
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem("user");
     return Promise.resolve();
   },
 };
