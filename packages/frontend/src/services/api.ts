@@ -42,8 +42,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     // Log errors in development mode
-    if (process.env.NODE_ENV === "development") {
-      console.error("API Error:", error.response?.data || error.message);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('API Error:', error.response?.data || error.message);
     }
     return Promise.reject(error);
   }
@@ -62,9 +62,10 @@ export const authAPI = {
       email,
       password,
     }),
-
+    
   logout: () => {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem("user");
     return Promise.resolve();
   },
 };
