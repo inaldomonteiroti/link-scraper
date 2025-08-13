@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "commonjs",
+    "lib": ["es2018", "esnext.asynciterable", "dom"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@link-scraper/*": ["packages/*/src"]
+    }
+  },
+  "include": [
+    "__tests__/**/*",
+    "__mocks__/@prisma-client-mock.d.ts",
+    "__mocks__/@link-scraper-shared.d.ts"
+  ],
+  "exclude": ["node_modules", "**/node_modules/*", "**/dist"],
+  "references": [
+    { "path": "./packages/api" },
+    { "path": "./packages/frontend" },
+    { "path": "./packages/worker" },
+    { "path": "./packages/shared" }
+  ]
+}

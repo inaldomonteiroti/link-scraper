@@ -26,7 +26,7 @@ const PageDetail: React.FC = () => {
 
       setPage(data.page);
       setLinks(data.links);
-      setTotalPages(data.pagination.pages);
+      setTotalPages(data.pagination.totalPages);
       setCurrentPage(data.pagination.page);
       setError(null);
     } catch (err: any) {

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/worker.js",
     "dev": "ts-node-dev --respawn --transpile-only src/worker.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rimraf dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,7 +19,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@link-scraper/shared": "workspace:*",
     "@prisma/client": "^5.0.0",
     "axios": "^1.4.0",
     "bull": "^4.10.4",

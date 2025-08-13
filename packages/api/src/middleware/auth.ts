@@ -1,12 +1,14 @@
 import { Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { PrismaClient } from "@prisma/client";
 import { AuthRequest } from "../types";
+const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
 const JWT_SECRET =
-  process.env.JWT_SECRET || "dev_secret_key_change_in_production";
+  process.env.NODE_ENV === "test"
+    ? process.env.JWT_SECRET || "test_secret"
+    : process.env.JWT_SECRET || "dev_secret_key_change_in_production";
 
 export const authenticate = async (
   req: AuthRequest,

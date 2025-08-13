@@ -33,8 +33,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [state, setState] = useState<AuthState>({
     user: null,
-    token: localStorage.getItem("link_scraper_token"),
-    isAuthenticated: !!localStorage.getItem("link_scraper_token"),
+    token: localStorage.getItem("token"),
+    isAuthenticated: !!localStorage.getItem("token"),
     isLoading: false,
     error: null,
   });
@@ -48,7 +48,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       } catch (error) {
         console.error("Failed to parse user from localStorage", error);
         localStorage.removeItem("user");
-        localStorage.removeItem("link_scraper_token");
+        localStorage.removeItem("token");
         setState({
           user: null,
           token: null,
@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       const { data } = await authAPI.login(email, password);
       const { token, user } = data;
 
-      localStorage.setItem("link_scraper_token", token);
+      localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
       setState({
@@ -97,7 +97,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       const { data } = await authAPI.register(username, email, password);
       const { token, user } = data;
 
-      localStorage.setItem("link_scraper_token", token);
+      localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
       setState({
@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const logout = () => {
-    localStorage.removeItem("link_scraper_token");
+    localStorage.removeItem("token");
     localStorage.removeItem("user");
     setState({
       user: null,

@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { pagesAPI } from '../services/api';
-import { Page, PagesResponse } from '../types';
-import Pagination from '../components/Pagination';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { pagesAPI } from "../services/api";
+import { Page, PagesResponse } from "../types";
+import Pagination from "../components/Pagination";
 
 const Dashboard: React.FC = () => {
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
   const fetchPages = async (page: number = 1) => {
     try {
@@ -20,12 +22,12 @@ const Dashboard: React.FC = () => {
       const response = await pagesAPI.getPages(page);
       const data = response.data as PagesResponse;
       setPages(data.pages);
-      setTotalPages(data.pagination.pages);
+      setTotalPages(data.pagination.totalPages);
       setCurrentPage(data.pagination.page);
       setError(null);
     } catch (err: any) {
-      console.error('Error fetching pages:', err);
-      setError('Failed to load pages. Please try again.');
+      console.error("Error fetching pages:", err);
+      setError("Failed to load pages. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -33,21 +35,23 @@ const Dashboard: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!url.trim()) {
-      setError('Please enter a URL');
+      setError("Please enter a URL");
       return;
     }
-    
+
     try {
       setSubmitting(true);
       setError(null);
       await pagesAPI.submitUrl(url);
-      setUrl('');
+      setUrl("");
       fetchPages(1);
     } catch (err: any) {
-      console.error('Error submitting URL:', err);
-      setError(err.response?.data?.message || 'Failed to submit URL. Please try again.');
+      console.error("Error submitting URL:", err);
+      setError(
+        err.response?.data?.message || "Failed to submit URL. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -60,16 +64,16 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const hasProcessingPages = pages.some(
-      page => page.status === 'queued' || page.status === 'processing'
+      (page) => page.status === "queued" || page.status === "processing"
     );
-    
+
     if (hasProcessingPages) {
       const interval = setInterval(() => {
         fetchPages(currentPage);
       }, 5000);
-      
+
       setRefreshInterval(interval);
-      
+
       return () => {
         if (refreshInterval) clearInterval(refreshInterval);
       };
@@ -81,7 +85,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchPages();
-    
+
     return () => {
       if (refreshInterval) clearInterval(refreshInterval);
     };
@@ -89,23 +93,23 @@ const Dashboard: React.FC = () => {
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case 'queued':
-        return 'bg-secondary';
-      case 'processing':
-        return 'bg-warning text-dark';
-      case 'done':
-        return 'bg-success';
-      case 'failed':
-        return 'bg-danger';
+      case "queued":
+        return "bg-secondary";
+      case "processing":
+        return "bg-warning text-dark";
+      case "done":
+        return "bg-success";
+      case "failed":
+        return "bg-danger";
       default:
-        return 'bg-secondary';
+        return "bg-secondary";
     }
   };
 
   return (
     <div className="container mt-4">
       <h1 className="mb-4">Dashboard</h1>
-      
+
       <div className="card mb-4">
         <div className="card-header bg-primary text-white">
           <h5 className="mb-0">Submit a URL for Scraping</h5>
@@ -131,13 +135,13 @@ const Dashboard: React.FC = () => {
                 className="btn btn-primary"
                 disabled={submitting}
               >
-                {submitting ? 'Submitting...' : 'Submit'}
+                {submitting ? "Submitting..." : "Submit"}
               </button>
             </div>
           </form>
         </div>
       </div>
-      
+
       <div className="card">
         <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
           <h5 className="mb-0">Your Scraped Pages</h5>
@@ -159,7 +163,8 @@ const Dashboard: React.FC = () => {
             </div>
           ) : pages.length === 0 ? (
             <div className="alert alert-info">
-              You haven't submitted any URLs yet. Use the form above to get started.
+              You haven't submitted any URLs yet. Use the form above to get
+              started.
             </div>
           ) : (
             <div className="table-responsive">
@@ -177,20 +182,24 @@ const Dashboard: React.FC = () => {
                 <tbody>
                   {pages.map((page) => (
                     <tr key={page.id}>
-                      <td>{page.title || 'No title'}</td>
+                      <td>{page.title || "No title"}</td>
                       <td>
                         <a
                           href={page.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-truncate d-inline-block"
-                          style={{ maxWidth: '200px' }}
+                          style={{ maxWidth: "200px" }}
                         >
                           {page.url}
                         </a>
                       </td>
                       <td>
-                        <span className={`badge ${getStatusBadgeClass(page.status)}`}>
+                        <span
+                          className={`badge ${getStatusBadgeClass(
+                            page.status
+                          )}`}
+                        >
                           {page.status}
                         </span>
                       </td>
@@ -210,7 +219,7 @@ const Dashboard: React.FC = () => {
               </table>
             </div>
           )}
-          
+
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

@@ -35,7 +35,9 @@ export const normalizeUrl = (url: string): string => {
     if (parsed.pathname === "/") {
       normalized += "/";
     } else {
-      normalized += parsed.pathname.replace(/\/+$/, "");
+      normalized += parsed.pathname.endsWith("/")
+        ? parsed.pathname
+        : parsed.pathname.replace(/\/+$/, "");
     }
 
     if (parsed.search) {

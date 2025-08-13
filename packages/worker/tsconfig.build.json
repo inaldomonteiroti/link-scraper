@@ -3,7 +3,7 @@
     "target": "es2018",
     "module": "commonjs",
     "lib": ["es2018", "esnext.asynciterable", "dom"],
-    "types": ["jest", "node"],
+    "types": ["node"],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -14,14 +14,9 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "declaration": true,
-    "composite": true,
     "declarationMap": true,
-    "baseUrl": ".",
-    "paths": {
-      "*": ["node_modules/*"]
-    }
+    "baseUrl": "."
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"],
-  "references": []
+  "exclude": ["node_modules", "dist", "tests"]
 }

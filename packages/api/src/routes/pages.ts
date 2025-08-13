@@ -1,11 +1,22 @@
 import { Router, Response } from "express";
 import { body, query, param, validationResult } from "express-validator";
-import { PrismaClient } from "@prisma/client";
 import Bull from "bull";
 import { authenticate } from "../middleware/auth";
 import { AuthRequest } from "../types";
-import { Pagination, ScrapeJob } from "@link-scraper/shared";
 import { validateUrl } from "../utils/url-validator";
+const { PrismaClient } = require("@prisma/client");
+
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+interface ScrapeJob {
+  pageId: number;
+  url: string;
+}
 
 const router: Router = Router();
 const prisma = new PrismaClient();
@@ -168,7 +179,7 @@ router.get(
         total: totalCount,
         page,
         limit,
-        pages: Math.ceil(totalCount / limit),
+        totalPages: Math.ceil(totalCount / limit),
       };
 
       return res.json({
@@ -281,7 +292,7 @@ router.get(
         total: totalLinks,
         page,
         limit,
-        pages: Math.ceil(totalLinks / limit),
+        totalPages: Math.ceil(totalLinks / limit),
       };
 
       return res.json({

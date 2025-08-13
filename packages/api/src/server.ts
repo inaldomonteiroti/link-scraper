@@ -1,10 +1,10 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import morgan from "morgan";
-import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
 import pageRoutes from "./routes/pages";
+const { PrismaClient } = require("@prisma/client");
 
 dotenv.config();
 
@@ -66,7 +66,9 @@ async function startServer(): Promise<void> {
   }
 }
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
 
 process.on("SIGINT", async () => {
   await prisma.$disconnect();

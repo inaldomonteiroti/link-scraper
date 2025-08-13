@@ -1,11 +1,8 @@
 {
   "compilerOptions": {
     "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["jest", "node", "@testing-library/jest-dom"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -17,13 +14,12 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "outDir": "./build",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
     "jsx": "react-jsx"
   },
-  "include": [
-    "src"
-  ],
-  "references": [
-    { "path": "../shared" }
-  ]
+  "include": ["src", "tests", "../../@prisma-client-mock.d.ts"],
+  "references": [{ "path": "../shared" }]
 }

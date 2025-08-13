@@ -8,7 +8,7 @@ import {
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
 const API_TIMEOUT = parseInt(process.env.REACT_APP_API_TIMEOUT || "30000", 10);
-const TOKEN_KEY = process.env.REACT_APP_TOKEN_KEY || "link_scraper_token";
+const TOKEN_KEY = process.env.REACT_APP_TOKEN_KEY || "token";
 
 const api = axios.create({
   baseURL: API_URL,
