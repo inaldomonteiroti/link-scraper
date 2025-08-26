@@ -171,9 +171,9 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/link_scraper
 REDIS_URL=redis://localhost:6379
 
 # Worker Configuration
-CONCURRENCY=5
-MAX_ATTEMPTS=3
-BACKOFF_DELAY=5000
+CONCURRENCY=10
+MAX_ATTEMPTS=5
+BACKOFF_DELAY=10000
 
 # Scraper Settings
 MAX_CONTENT_SIZE=5242880  # 5MB in bytes
